@@ -1,6 +1,6 @@
 {
   "name": "manual-override-auditor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Record manual overrides with reason, actor, evidence and follow-up.",
   "type": "module",
   "engines": {

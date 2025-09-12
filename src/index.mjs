@@ -1,6 +1,6 @@
-const TOOL = 'manual-override-auditor';
+export const TOOL_ID = 'manual-override-auditor';
 const SEVERITY = Object.freeze({ 'input-unreadable': 'error', 'input-invalid': 'error', 'byte-limit': 'error', 'record-limit': 'error', 'depth-limit': 'error', 'time-limit': 'error', 'no-overrides': 'error', 'decision-invalid': 'error', 'decision-duplicate': 'error', 'decision-unknown': 'error', 'override-invalid': 'error', 'override-duplicate': 'error', 'actor-missing': 'error', 'reason-missing': 'error', 'scope-missing': 'error', 'follow-up-missing': 'error', 'original-result-mismatch': 'error', 'override-no-change': 'error', 'override-before-decision': 'error', 'override-in-future': 'error', 'expiry-invalid': 'error', 'override-expired': 'error' });
-const INCOMPLETE = new Set(['input-unreadable', 'input-invalid', 'byte-limit', 'record-limit', 'depth-limit', 'time-limit', 'decision-invalid', 'decision-duplicate', 'decision-unknown', 'override-in-future']);
+const INCOMPLETE = new Set(['input-unreadable', 'input-invalid', 'byte-limit', 'record-limit', 'depth-limit', 'time-limit', 'decision-invalid', 'decision-duplicate', 'decision-unknown', 'override-in-future', 'no-overrides', 'override-invalid', 'override-duplicate']);
 export const LIMITS = Object.freeze({ bytes: 1_048_576, records: 1000, depth: 16, milliseconds: 5000 });
 const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 const record = x => x !== null && typeof x === 'object' && !Array.isArray(x);
@@ -19,7 +19,7 @@ function add(findings, ruleId, pointer, message) {
 function report(findings, checked) {
   findings.sort((a, b) => cmp(a.location.file, b.location.file) || cmp(a.location.pointer ?? '', b.location.pointer ?? '') || cmp(a.ruleId, b.ruleId));
   const status = findings.some(f => INCOMPLETE.has(f.ruleId)) ? 'incomplete' : findings.some(f => f.severity === 'error') ? 'fail' : 'pass';
-  return { schemaVersion: '1', tool: TOOL, status, summary: { checked, errors: findings.filter(f => f.severity === 'error').length, warnings: 0 }, findings };
+  return { schemaVersion: '1', tool: TOOL_ID, status, summary: { checked, errors: findings.filter(f => f.severity === 'error').length, warnings: 0 }, findings };
 }
 export function incomplete(ruleId, message) { const findings = []; add(findings, ruleId, '', message); return report(findings, 0); }
 export function audit(doc, asOf, now = () => performance.now()) {

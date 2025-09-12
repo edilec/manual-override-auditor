@@ -34,7 +34,7 @@ test('reasonless override fails even when all other fields are good', async () =
   assert.equal(r.code, 1); assert.equal(r.report.findings[0].ruleId, 'reason-missing');
 });
 test('override cannot rewrite recorded original decision', async () => {
-  const d = structuredClone(clean); d.overrides[0].originalResult = 'allow';
+  const d = structuredClone(clean); d.overrides[0].originalResult = 'allow'; d.overrides[0].overrideResult = 'deny';
   const r = await run(d);
   assert.equal(r.code, 1); assert.equal(r.report.status, 'fail');
   assert.equal(r.report.findings[0].ruleId, 'original-result-mismatch');
@@ -51,6 +51,24 @@ test('future override is incomplete at the assessment time', async () => {
   const r = await run(d);
   assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
   assert.equal(r.report.findings[0].ruleId, 'override-in-future');
+});
+test('empty override export is incomplete, not an evaluated failure', async () => {
+  const d = structuredClone(clean); d.overrides = [];
+  const r = await run(d);
+  assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
+  assert.equal(r.report.findings[0].ruleId, 'no-overrides');
+});
+test('unusable override record is incomplete', async () => {
+  const d = structuredClone(clean); d.overrides[0].expiresAt = 'bad-date';
+  const r = await run(d);
+  assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
+  assert.equal(r.report.findings[0].ruleId, 'override-invalid');
+});
+test('duplicate override identity is incomplete', async () => {
+  const d = structuredClone(clean); d.overrides.push({ ...d.overrides[0] });
+  const r = await run(d);
+  assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
+  assert.equal(r.report.findings[0].ruleId, 'override-duplicate');
 });
 test('malformed input is incomplete and never echoes quoted payload', async () => {
   const r = await run('at position 1');

@@ -26,7 +26,7 @@ The version 1 report has `schemaVersion`, `tool`, `status`, `summary`, and `find
 | `byte-limit`, `record-limit`, `depth-limit`, `time-limit` | error, incomplete | Processing bound was exceeded |
 | `decision-invalid`, `decision-duplicate`, `decision-unknown` | error, incomplete | Recorded decision is unusable, ambiguous, or absent |
 | `override-in-future` | error, incomplete | Event had not happened at assessment time |
-| `no-overrides`, `override-invalid`, `override-duplicate` | error, fail | No events, malformed event, or reused event ID |
+| `no-overrides`, `override-invalid`, `override-duplicate` | error, incomplete | No events, unusable event, or ambiguous event ID |
 | `actor-missing`, `reason-missing`, `scope-missing`, `follow-up-missing` | error, fail | Required accountability field is empty |
 | `original-result-mismatch`, `override-no-change`, `override-before-decision` | error, fail | Override contradicts the recorded decision or order |
 | `expiry-invalid`, `override-expired` | error, fail | Invalid or expired time window |
