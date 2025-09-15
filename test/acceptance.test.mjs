@@ -4,6 +4,7 @@ import { mkdtemp, writeFile, symlink, link, readFile, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { audit } from '../src/index.mjs';
 
 const cli = new URL('../bin/manual-override-auditor.mjs', import.meta.url).pathname;
 const asOf = '2026-01-02T00:00:00Z';
@@ -118,4 +119,55 @@ test('hard-linked output is refused without altering input', async () => {
 test('identical export and assessment time produce identical bytes', async () => {
   const a = await run(), b = await run();
   assert.equal(a.stdout, b.stdout);
+});
+test('byte bound accepts exactly 1048576 and rejects the next byte', async () => {
+  const base = JSON.stringify(clean);
+  const exact = base + ' '.repeat(1_048_576 - Buffer.byteLength(base));
+  const at = await run(exact), over = await run(exact + ' ');
+  assert.equal(at.code, 0); assert.equal(at.report.status, 'pass');
+  assert.equal(over.code, 2); assert.equal(over.report.findings[0].ruleId, 'byte-limit');
+});
+test('depth bound accepts level 16 and rejects level 17', async () => {
+  const nested = count => { const d = structuredClone(clean); let node = d; for (let i = 0; i < count; i++) { node.extra = {}; node = node.extra; } return d; };
+  const at = await run(nested(16)), over = await run(nested(17));
+  assert.equal(at.code, 0); assert.equal(at.report.status, 'pass');
+  assert.equal(over.code, 2); assert.equal(over.report.findings[0].ruleId, 'depth-limit');
+});
+test('injected time bound accepts 5000 ms and rejects 5001 ms', () => {
+  const clock = values => { let i = 0; return () => values[i++] ?? values.at(-1); };
+  assert.equal(audit(clean, asOf, clock([0, 5000, 5000])).status, 'pass');
+  const over = audit(clean, asOf, clock([0, 5001]));
+  assert.equal(over.status, 'incomplete'); assert.equal(over.findings[0].ruleId, 'time-limit');
+});
+test('output refuses a symlink destination and preserves outside sentinel', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'override-out-root-')), outside = await mkdtemp(join(tmpdir(), 'override-outside-'));
+  await writeFile(join(root, 'input.json'), JSON.stringify(clean));
+  await writeFile(join(outside, 'sentinel.json'), 'sentinel');
+  await symlink(join(outside, 'sentinel.json'), join(root, 'report.json'));
+  try {
+    const p = spawnSync(process.execPath, [cli, '--root', root, '--input', 'input.json', '--as-of', asOf, '--out', 'report.json'], { encoding: 'utf8' });
+    assert.equal(p.status, 2); assert.equal(p.stdout, '');
+    assert.equal(await readFile(join(outside, 'sentinel.json'), 'utf8'), 'sentinel');
+  } finally { await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
+});
+test('output refuses a symlinked parent escape and preserves outside sentinel', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'override-parent-root-')), outside = await mkdtemp(join(tmpdir(), 'override-parent-outside-'));
+  await writeFile(join(root, 'input.json'), JSON.stringify(clean));
+  await writeFile(join(outside, 'report.json'), 'sentinel');
+  await symlink(outside, join(root, 'linked'));
+  try {
+    const p = spawnSync(process.execPath, [cli, '--root', root, '--input', 'input.json', '--as-of', asOf, '--out', 'linked/report.json'], { encoding: 'utf8' });
+    assert.equal(p.status, 2); assert.equal(p.stdout, '');
+    assert.equal(await readFile(join(outside, 'report.json'), 'utf8'), 'sentinel');
+  } finally { await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
+});
+test('ordinary new report output contains exactly stdout', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'override-allowed-'));
+  const original = JSON.stringify(clean);
+  await writeFile(join(root, 'input.json'), original);
+  const p = spawnSync(process.execPath, [cli, '--root', root, '--input', 'input.json', '--as-of', asOf, '--out', 'report.json'], { encoding: 'utf8' });
+  assert.equal(p.status, 0); assert.equal(JSON.parse(p.stdout).status, 'pass');
+  assert.equal(await readFile(join(root, 'report.json'), 'utf8'), p.stdout);
+  assert.equal(await readFile(join(root, 'input.json'), 'utf8'), original);
+  await rm(root, { recursive: true, force: true });
 });
