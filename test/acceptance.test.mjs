@@ -41,6 +41,13 @@ test('override cannot rewrite recorded original decision', async () => {
   assert.equal(r.report.findings[0].ruleId, 'original-result-mismatch');
   assert.equal(r.report.findings[0].location.pointer, '/overrides/0/originalResult');
 });
+test('override must occur strictly after the recorded decision', async () => {
+  const d = structuredClone(clean); d.overrides[0].occurredAt = d.decisions[0].recordedAt;
+  const r = await run(d);
+  assert.equal(r.code, 1); assert.equal(r.report.status, 'fail');
+  assert.equal(r.report.findings[0].ruleId, 'override-before-decision');
+  assert.equal(r.report.findings[0].location.pointer, '/overrides/0/occurredAt');
+});
 test('unknown decision is incomplete rather than accepted', async () => {
   const d = structuredClone(clean); d.overrides[0].decisionId = 'missing';
   const r = await run(d);

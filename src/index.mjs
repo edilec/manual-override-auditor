@@ -59,7 +59,7 @@ export function audit(doc, asOf, now = () => performance.now()) {
     if (!decision || ambiguous.has(o.decisionId)) add(findings, 'decision-unknown', `${at}/decisionId`, 'Referenced original decision is unavailable or ambiguous.');
     else {
       if (o.originalResult !== decision.result) add(findings, 'original-result-mismatch', `${at}/originalResult`, 'Override copy differs from the recorded original result.');
-      if (o.occurredAt < decision.recordedAt) add(findings, 'override-before-decision', `${at}/occurredAt`, 'Override predates the recorded original decision.');
+      if (o.occurredAt <= decision.recordedAt) add(findings, 'override-before-decision', `${at}/occurredAt`, 'Override must occur after the recorded original decision.');
     }
     if (o.originalResult === o.overrideResult) add(findings, 'override-no-change', `${at}/overrideResult`, 'Override result must differ from original result.');
     if (o.occurredAt > asOf) add(findings, 'override-in-future', `${at}/occurredAt`, 'Override event is later than the assessment time.');
