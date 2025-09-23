@@ -36,6 +36,7 @@ export function audit(doc, asOf, now = () => performance.now()) {
   for (const [i, d] of doc.decisions.entries()) {
     if (now() - started > LIMITS.milliseconds) { add(findings, 'time-limit', '', 'Processing exceeded 5000 milliseconds.'); return report(findings, 0); }
     if (!record(d) || !usable(d.id) || !result(d.result) || !timestamp(d.recordedAt)) {
+      if (record(d) && usable(d.id)) ambiguous.add(d.id);
       add(findings, 'decision-invalid', `/decisions/${i}`, 'Decision lacks a usable identifier, result, or timestamp.'); continue;
     }
     if (decisions.has(d.id)) { ambiguous.add(d.id); add(findings, 'decision-duplicate', `/decisions/${i}`, 'Decision identifier is duplicated.'); }

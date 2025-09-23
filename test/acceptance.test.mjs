@@ -54,6 +54,15 @@ test('unknown decision is incomplete rather than accepted', async () => {
   assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
   assert.equal(r.report.findings[0].ruleId, 'decision-unknown');
 });
+test('invalid duplicate decision taints the referenced identity', async () => {
+  const d = structuredClone(clean);
+  d.decisions.push({ id: 'decision-a', result: 'unknown', recordedAt: '2026-01-01T00:00:00Z' });
+  d.overrides[0].originalResult = 'allow'; d.overrides[0].overrideResult = 'deny';
+  const r = await run(d);
+  assert.equal(r.code, 2); assert.equal(r.report.status, 'incomplete');
+  assert.deepEqual(r.report.findings.map(f => f.ruleId), ['decision-invalid', 'decision-unknown']);
+  assert.equal(r.report.findings[1].location.pointer, '/overrides/0/decisionId');
+});
 test('future override is incomplete at the assessment time', async () => {
   const d = structuredClone(clean); d.overrides[0].occurredAt = '2026-01-02T12:00:00Z';
   const r = await run(d);
