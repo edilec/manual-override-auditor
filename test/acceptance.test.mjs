@@ -187,3 +187,11 @@ test('ordinary new report output contains exactly stdout', async () => {
   assert.equal(await readFile(join(root, 'input.json'), 'utf8'), original);
   await rm(root, { recursive: true, force: true });
 });
+test('output cannot create the named input when that input is missing', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'override-missing-alias-'));
+  try {
+    const p = spawnSync(process.execPath, [cli, '--root', root, '--input', 'missing.json', '--as-of', asOf, '--out', 'missing.json'], { encoding: 'utf8' });
+    assert.equal(p.status, 2); assert.equal(p.stdout, '');
+    await assert.rejects(readFile(join(root, 'missing.json')), { code: 'ENOENT' });
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

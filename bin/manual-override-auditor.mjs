@@ -48,6 +48,7 @@ if (args.length === 1 && args[0] === '--help') {
   if (out) {
     try {
       const destination = resolve(root, out);
+      if (destination === resolve(root, input)) throw new Error('output aliases named input');
       const parent = await realpath(dirname(destination));
       if (!inside(parent) || !inside(destination)) throw new Error('outside root');
       let old;
