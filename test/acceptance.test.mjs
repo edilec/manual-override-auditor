@@ -195,3 +195,12 @@ test('output cannot create the named input when that input is missing', async ()
     await assert.rejects(readFile(join(root, 'missing.json')), { code: 'ENOENT' });
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+test('output cannot reach a missing input through an in-root symlinked parent', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'override-parent-alias-'));
+  try {
+    await symlink(root, join(root, 'alias'));
+    const p = spawnSync(process.execPath, [cli, '--root', root, '--input', 'missing.json', '--as-of', asOf, '--out', 'alias/missing.json'], { encoding: 'utf8' });
+    assert.equal(p.status, 2); assert.equal(p.stdout, '');
+    await assert.rejects(readFile(join(root, 'missing.json')), { code: 'ENOENT' });
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

@@ -50,6 +50,9 @@ if (args.length === 1 && args[0] === '--help') {
       const destination = resolve(root, out);
       if (destination === resolve(root, input)) throw new Error('output aliases named input');
       const parent = await realpath(dirname(destination));
+      const namedInput = await realpath(dirname(resolve(root, input)))
+        .then(p => join(p, basename(resolve(root, input)))).catch(() => null);
+      if (join(parent, basename(destination)) === namedInput) throw new Error('output aliases named input');
       if (!inside(parent) || !inside(destination)) throw new Error('outside root');
       let old;
       try { old = await lstat(destination); } catch (e) { if (e.code !== 'ENOENT') throw e; }
