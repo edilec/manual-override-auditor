@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/manual-override-auditor.mjs && node --check src/index.mjs && node --test"
+    "lint": "node --check bin/manual-override-auditor.mjs && node --check src/index.mjs",
+    "check": "npm run lint && npm test"
   },
   "license": "MIT",
   "repository": {
