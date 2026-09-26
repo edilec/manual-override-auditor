@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "1",
+  "decisions": [{ "id": "decision-a", "result": "deny", "recordedAt": "2026-01-01T00:00:00Z" }],
+  "overrides": [{ "id": "override-a", "decisionId": "decision-a", "originalResult": "deny", "overrideResult": "allow", "actor": "sample-operator", "reason": "Documented exception", "scope": "sample-operation", "occurredAt": "2026-01-01T12:00:00Z", "expiresAt": "2026-01-03T00:00:00Z", "followUpEvidence": "sample-ticket" }]
+}

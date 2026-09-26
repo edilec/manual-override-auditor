@@ -1,0 +1,19 @@
+{
+  "name": "manual-override-auditor",
+  "version": "0.1.0",
+  "description": "Record manual overrides with reason, actor, evidence and follow-up.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check bin/manual-override-auditor.mjs && node --check src/index.mjs",
+    "check": "npm run lint && npm test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edilec/manual-override-auditor"
+  }
+}
